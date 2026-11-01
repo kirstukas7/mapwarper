@@ -1,0 +1,80 @@
+services:
+  db:
+    # Rails 4.2 does not work with PostgreSQL 12+ (pg_attrdef.adsrc was removed).
+    image: postgis/postgis:11-3.3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-mapwarper_production}
+      POSTGRES_USER: ${DB_USER:-mapwarper}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no --maxmemory ${REDIS_MAXMEMORY:-512mb} --maxmemory-policy allkeys-lru
+
+  app:
+    # Built and published by .github/workflows/docker-image.yml.
+    # To build on the server instead, run: docker build -t mapwarper:local .
+    # and set MAPWARPER_IMAGE=mapwarper:local in .env.
+    image: ${MAPWARPER_IMAGE:-ghcr.io/kirstukas7/mapwarper:latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-mapwarper_production}
+      DB_USER: ${DB_USER:-mapwarper}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_CACHE_URL: redis://redis:6379/0/cache
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    volumes:
+      - ./docker/application.yml:/app/config/application.yml:ro
+      - uploads:/app/public/uploads
+      - system:/app/public/system
+      - mapimages:/app/public/mapimages
+      - maptileindex:/app/db/maptileindex
+      - imports:/app/db/imports
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  uploads:
+  system:
+  mapimages:
+  maptileindex:
+  imports:
+  caddy_data:
+  caddy_config:

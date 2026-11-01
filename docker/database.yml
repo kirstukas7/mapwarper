@@ -1,0 +1,9 @@
+production:
+  adapter: postgis
+  host: <%= ENV.fetch('DB_HOST', 'db') %>
+  port: <%= ENV.fetch('DB_PORT', 5432) %>
+  database: <%= ENV.fetch('DB_NAME', 'mapwarper_production') %>
+  username: <%= ENV.fetch('DB_USER', 'mapwarper') %>
+  password: <%= ENV['DB_PASSWORD'] %>
+  pool: 5
+  timeout: 5000

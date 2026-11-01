@@ -49,3 +49,7 @@ vendor/bundle
 
 #test files
 test/test_files/*
+
+#docker
+.env
+docker/application.yml

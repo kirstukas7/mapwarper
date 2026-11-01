@@ -30,6 +30,9 @@ gem 'jbuilder', '~> 2.0'
 # Use unicorn as the app server
 # gem 'unicorn'
 
+# Use puma as the app server (used by the Docker setup)
+gem 'puma', '~> 5.6'
+
 # Use debugger
 # gem 'debugger', group: [:development, :test]
 

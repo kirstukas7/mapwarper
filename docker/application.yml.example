@@ -1,0 +1,46 @@
+# Copy to docker/application.yml and edit. Mounted into the container as
+# config/application.yml. Leave src_maps_dir/dst_maps_dir empty so map images
+# are stored on the mapimages volume.
+production:
+  email: example_user@example.com
+  addthis_twitter_user: example_user@example.com
+  addthis_user: example_user
+  google_analytics_code:
+  google_analytics_cookie_path:  ""
+  src_maps_dir: 
+  dst_maps_dir: 
+  mapzen_key: "ABC"
+  geocode_country: ""
+  geoparse_geocodexyz_key: ""
+  geoparse_region: ""
+  geoparse_enable: false
+  host: "maps.example.com"
+  site_name: "MapWarper"
+  full_site_name: "MapWarper.net"
+  reply_to: "example@example.com"
+  omniauth_osm_key: "ABC"
+  omniauth_osm_secret: "ABC"
+  omniauth_osm_oauth2_key: "ABC"
+  omniauth_osm_oauth2_secret: "ABC"
+  omniauth_twitter_key: "ABC"
+  omniauth_twitter_secret: "ABC"
+  omniauth_mediawiki_site: "https://commons.wikimedia.org"
+  omniauth_mediawiki_key: "ABC"
+  omniauth_mediawiki_secret: "ABC"
+  omniauth_github_key: "ABC"
+  omniauth_github_secret: "ABC"
+  omniauth_facebook_key: "ABC"
+  omniauth_facebook_secret: "ABC"
+  id_key: ""
+  id_secret: ""
+  mapbox_access_token: ""
+  localeapp_api_key: ""
+  import_maps_sftp_path: "/home/sftpuser/maps"
+  #gdal_path: "/home/fwtools/bin_safe/"
+  gdal_path: ""
+  gdal_memory_limit: ""
+  disabled_site: false
+  hcaptcha_key: ""
+  hcaptcha_secret: ""
+  data_request_email: example@example.com
+  maptiler_key: "abc"

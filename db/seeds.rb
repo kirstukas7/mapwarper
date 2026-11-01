@@ -5,3 +5,8 @@
 #
 #   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
 #   Mayor.create(name: 'Emanuel', city: cities.first)
+
+# Roles are created by migrations; recreate them when loading from schema.rb
+%w(super\ user editor administrator developer trusted).each do |name|
+  Role.find_or_create_by(name: name)
+end
