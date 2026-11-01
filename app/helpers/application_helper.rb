@@ -7,6 +7,17 @@ module ApplicationHelper
   def editor_authorized?
     user_signed_in? && current_user.has_role?('editor')
   end
+
+  # Version stamps for the site's own tile/WMS URLs (?v=...). They change when the
+  # warped image changes, so pages show a re-warp at once while unchanged images
+  # stay cached by browsers and CDNs.
+  def map_image_version(map)
+    map.image_updated_at.to_i
+  end
+
+  def layer_image_version(layer)
+    layer.image_updated_at.to_i
+  end
   
   FLASH_NOTICE_KEYS = [:error, :notice, :warning, :alert]
   def flash_messages

@@ -19,6 +19,7 @@ class MapsController < ApplicationController
 
   skip_before_action :require_hcaptcha, :only => [:wms, :tile]
   before_filter :set_public_tile_cache_headers, :only => [:wms, :tile]
+  before_filter :map_tile_conditional_get, :only => [:wms, :tile]
   after_filter :expires_now_unless_image, :only => [:wms, :tile]
 
   rescue_from ActiveRecord::RecordNotFound, :with => :bad_record
@@ -876,6 +877,13 @@ class MapsController < ApplicationController
   
   
   private
+
+  def map_tile_conditional_get
+    map = Map.find_by_id(params[:id])
+    # tile always serves the warped image; wms reads STATUS like the wms action
+    status = action_name == "tile" ? "warped" : params["STATUS"].to_s.downcase
+    tile_conditional_get(map.image_updated_at(status)) if map
+  end
   
   def rectify_main
     resample_param = params[:resample_options]

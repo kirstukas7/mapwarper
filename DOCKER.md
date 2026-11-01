@@ -79,9 +79,19 @@ another service.
 
 ## Cloudflare caching for tiles and WMS
 
-Tile and WMS image responses are sent with
-`Cache-Control: public, max-age=<TILE_CACHE_MAX_AGE>` (default one day) and no
-session cookie, so Cloudflare and browsers can cache them. Errors, and WMS
+Tile and WMS image responses are sent with no session cookie and
+
+```
+Cache-Control: max-age=<TILE_CACHE_MAX_AGE>, public
+```
+
+Responses also carry `Last-Modified`: the time the map was last warped (for a
+mosaic, the latest re-warp of a member map or change to its map list).
+
+Browsers and Cloudflare keep an image for `TILE_CACHE_MAX_AGE` (default 5
+minutes). After that they ask again with `If-Modified-Since`. If the image hasn't changed, the app answers
+`304 Not Modified` after one database lookup, without rendering, and the cached
+copy is kept. Only a re-warp makes the app render new tiles. Errors, and WMS
 `GetCapabilities`, are sent as `no-cache` and are never cached.
 
 Cloudflare only caches URLs with a file extension by default, and WMS URLs have
@@ -100,16 +110,23 @@ expression:
   because they differ only by it. Sorting makes clients that order parameters
   differently share cache entries.
 
-Check it works: request the same tile twice and look for `cf-cache-status: HIT`.
+Check it works: request the same tile twice and look for `cf-cache-status: HIT`
+and a `last-modified` header.
 
 ```bash
-curl -sI https://maps.example.com/maps/tile/1/10/570/335.png | grep -iE "cf-cache-status|cache-control"
+curl -sI https://maps.example.com/maps/tile/1/10/570/335.png | grep -iE "cf-cache-status|cache-control|last-modified"
 ```
 
-**After re-warping a map**, the editor pages fetch fresh images, but other users
-and outside tile URLs can see the old version until the cache expires. To
-update it sooner, purge in Cloudflare (Caching → Configuration → Purge Cache),
-or lower `TILE_CACHE_MAX_AGE` in `.env`.
+Once a cached tile is older than `TILE_CACHE_MAX_AGE`, the next request shows
+`cf-cache-status: REVALIDATED`, and the app log shows `304 Not Modified` for it.
+
+**After re-warping a map**, the site's own pages (map preview, warp and mosaic
+pages) show the new images at once: their tile and WMS URLs carry a `?v=`
+version that changes on every re-warp. Outside tile URLs, such as ones pasted
+into QGIS, get the new tiles at the next recheck: within `TILE_CACHE_MAX_AGE`,
+or up to twice that if a browser fetched Cloudflare's copy just before it
+expired (10 minutes at most by default). To update them at once, purge in
+Cloudflare (Caching → Configuration → Purge Cache).
 
 ## Creating an admin user
 

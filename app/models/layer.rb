@@ -38,11 +38,20 @@ class Layer < ActiveRecord::Base
     end
   end
   
+  # When the mosaic image last changed: a member map was re-warped, or maps were
+  # added or removed (which also updates the counts on this record).
+  def image_updated_at
+    [updated_at, layers_maps.maximum(:updated_at), maps.maximum(:rectified_at)].compact.max
+  end
+
   def update_layer
     create_tileindex
     set_bounds
-    Rails.cache.delete_matched "*/mosaics/tile/#{self.id}/*"
-    Rails.cache.delete_matched "*/mosaics/wms/#{self.id}?*"
+    # /layers/... are older aliases of the /mosaics/... routes, cached separately
+    %w(mosaics layers).each do |prefix|
+      Rails.cache.delete_matched "*/#{prefix}/tile/#{self.id}/*"
+      Rails.cache.delete_matched "*/#{prefix}/wms/#{self.id}[.?]*"
+    end
   end
 
   def update_counts

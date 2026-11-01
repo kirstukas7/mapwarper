@@ -970,8 +970,16 @@ class Map < ActiveRecord::Base
     return placemaker_result
   end
   
+  # When the image served for a WMS status last changed. Drives the tile/WMS
+  # Last-Modified header and the ?v= stamps on the site's own image URLs.
+  def image_updated_at(status = "warped")
+    status == "unwarped" ? created_at : rectified_at
+  end
+
   def clear_cache
-    Rails.cache.delete_matched ".*/maps/wms/#{self.id}.png\?status=warped.*"
+    # Redis glob patterns: [.?] matches "/maps/wms/12.png?..." and "/maps/wms/12?..."
+    # but not "/maps/wms/123..."
+    Rails.cache.delete_matched "*/maps/wms/#{self.id}[.?]*"
     Rails.cache.delete_matched "*/maps/tile/#{self.id}/*"
   end
 

@@ -20,7 +20,7 @@
     var title = '<%=u @map.title -%>';
     var image_width = <%= @map.width %>;
     var image_height = <%= @map.height %>;
-    var wms_url = '<%= url_for :controller => 'maps', :action => 'wms', :id => @map  -%>';
+    var wms_url = '<%= url_for :controller => 'maps', :action => 'wms', :id => @map, :v => map_image_version(@map) -%>';
     var empty_wms_url = '<%= url_for :controller => 'maps', :action => 'wms' -%>';
     var map_has_bounds = false;
     var layer_baseurl = '<%= url_for(wms_layer_base_path) %>';
