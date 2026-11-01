@@ -12,7 +12,8 @@ The stack has three services and plugs into an existing Traefik reverse proxy:
 
 Every push to `master` triggers `.github/workflows/docker-image.yml`, which builds
 the app image and pushes it to GitHub Container Registry as
-`ghcr.io/kirstukas7/mapwarper` with these tags:
+`ghcr.io/<owner>/<repo>` (the GitHub repository it runs in, lowercased) with
+these tags:
 
 - `latest`: the newest build from `master`
 - `sha-<commit>`: one tag per commit, so you can pin or roll back
@@ -24,16 +25,16 @@ Docker pulls the right one automatically.
 You can also start a build by hand from the repository's Actions tab ("Run workflow").
 
 New GHCR packages are private. Either make the package public (GitHub → your
-profile → Packages → mapwarper → Package settings → Change visibility), or log in
-on the VPS once with a personal access token that has the `read:packages` scope:
+profile → Packages → <repo> → Package settings → Change visibility), or log in
+on the server once with a personal access token that has the `read:packages` scope:
 
 ```bash
-docker login ghcr.io -u kirstukas7
+docker login ghcr.io -u <github-username>
 ```
 
-## Deploying to a VPS
+## Deploying to a server
 
-The VPS does not need the source code, only these files:
+The server does not need the source code, only these files:
 
 ```
 docker-compose.yml
@@ -42,9 +43,10 @@ docker/application.yml    (from docker/application.yml.example)
 ```
 
 1. Have Docker Engine with the compose plugin and a running Traefik v2/v3 on
-   the VPS. Traefik needs the Docker provider enabled.
-2. Point your domain's DNS A/AAAA record at the VPS.
-3. Copy the files above to a folder on the VPS (or clone the repo there).
+   the server. Traefik needs the Docker provider enabled.
+2. Point your domain's DNS A/AAAA record at the server.
+3. Copy the files above to a folder on the server (or clone the repo there).
+   In `.env`, set `MAPWARPER_IMAGE` to your published image.
 4. Edit `.env`: set `DOMAIN`, `DB_PASSWORD`, and `SECRET_KEY_BASE`
    (`openssl rand -hex 64`). Add SMTP settings if you want signup emails.
    Set the three `TRAEFIK_*` values to match your Traefik setup (see below).
@@ -75,6 +77,40 @@ If Traefik already redirects HTTP to HTTPS globally, nothing else is needed.
 The router is named `mapwarper`; rename it in the labels if that clashes with
 another service.
 
+## Cloudflare caching for tiles and WMS
+
+Tile and WMS image responses are sent with
+`Cache-Control: public, max-age=<TILE_CACHE_MAX_AGE>` (default one day) and no
+session cookie, so Cloudflare and browsers can cache them. Errors, and WMS
+`GetCapabilities`, are sent as `no-cache` and are never cached.
+
+Cloudflare only caches URLs with a file extension by default, and WMS URLs have
+none, so add a Cache Rule (Caching → Cache Rules → Create rule) with this
+expression:
+
+```
+(starts_with(http.request.uri.path, "/maps/tile/") or starts_with(http.request.uri.path, "/maps/wms/") or starts_with(http.request.uri.path, "/mosaics/tile/") or starts_with(http.request.uri.path, "/mosaics/wms") or starts_with(http.request.uri.path, "/layers/tile/") or starts_with(http.request.uri.path, "/layers/wms"))
+```
+
+- Cache eligibility: **Eligible for cache**
+- Edge TTL: **Use cache-control header if present**, bypass cache if not
+- Browser TTL: **Respect origin**
+- Cache key: turn on **Sort query string**, never **Ignore query string**. The
+  default key already includes the full query string, which WMS requests need
+  because they differ only by it. Sorting makes clients that order parameters
+  differently share cache entries.
+
+Check it works: request the same tile twice and look for `cf-cache-status: HIT`.
+
+```bash
+curl -sI https://maps.example.com/maps/tile/1/10/570/335.png | grep -iE "cf-cache-status|cache-control"
+```
+
+**After re-warping a map**, the editor pages fetch fresh images, but other users
+and outside tile URLs can see the old version until the cache expires. To
+update it sooner, purge in Cloudflare (Caching → Configuration → Purge Cache),
+or lower `TILE_CACHE_MAX_AGE` in `.env`.
+
 ## Creating an admin user
 
 ```bash
@@ -88,7 +124,7 @@ docker compose exec app bundle exec rails runner '
 
 ## Updating
 
-Push to `master`, wait for the workflow to finish, then on the VPS:
+Push to `master`, wait for the workflow to finish, then on the server:
 
 ```bash
 docker compose pull app
@@ -112,7 +148,7 @@ docker compose exec db pg_dump -U mapwarper mapwarper_production | gzip > mapwar
 
 - Puma runs `WEB_CONCURRENCY` worker processes with one thread each, because
   Mapserver mapscript is not thread safe. Raise it if you have spare RAM/CPU.
-- Warping large images is memory hungry; give the VPS at least 4 GB of RAM.
+- Warping large images is memory hungry; give the server at least 4 GB of RAM.
 - The image is based on Ubuntu 18.04 because the app needs Ruby 2.x with the
   distro's `ruby-mapscript` bindings. That base no longer receives free security
   updates, so keep the app behind Traefik and don't expose port 3000 directly.
