@@ -5,7 +5,7 @@ The stack has three services and plugs into an existing Traefik reverse proxy:
 | Service | What it does |
 |---------|--------------|
 | `app`   | Rails app (Puma) with GDAL, ImageMagick and Mapserver mapscript |
-| `db`    | PostgreSQL 11 + PostGIS |
+| `db`    | PostgreSQL 11 + PostGIS 3.3 (`imresamu/postgis`, multi-arch) |
 | `redis` | WMS/tile cache |
 
 ## Image builds
@@ -17,6 +17,9 @@ the app image and pushes it to GitHub Container Registry as
 - `latest`: the newest build from `master`
 - `sha-<commit>`: one tag per commit, so you can pin or roll back
 - `<version>`: for git tags like `v1.2.0`
+
+Images are built for both x86 (`linux/amd64`) and ARM (`linux/arm64`) servers;
+Docker pulls the right one automatically.
 
 You can also start a build by hand from the repository's Actions tab ("Run workflow").
 
