@@ -1,7 +1,9 @@
 services:
   db:
     # Rails 4.2 does not work with PostgreSQL 12+ (pg_attrdef.adsrc was removed).
-    image: postgis/postgis:11-3.3
+    # imresamu/postgis is the multi-arch (amd64 + arm64) build of postgis/postgis,
+    # which only ships amd64.
+    image: imresamu/postgis:11-3.3
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-mapwarper_production}
