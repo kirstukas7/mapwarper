@@ -971,7 +971,9 @@ class Map < ActiveRecord::Base
   end
   
   def clear_cache
-    Rails.cache.delete_matched ".*/maps/wms/#{self.id}.png\?status=warped.*"
+    # Redis glob patterns: [.?] matches "/maps/wms/12.png?..." and "/maps/wms/12?..."
+    # but not "/maps/wms/123..."
+    Rails.cache.delete_matched "*/maps/wms/#{self.id}[.?]*"
     Rails.cache.delete_matched "*/maps/tile/#{self.id}/*"
   end
 

@@ -41,8 +41,11 @@ class Layer < ActiveRecord::Base
   def update_layer
     create_tileindex
     set_bounds
-    Rails.cache.delete_matched "*/mosaics/tile/#{self.id}/*"
-    Rails.cache.delete_matched "*/mosaics/wms/#{self.id}?*"
+    # /layers/... are older aliases of the /mosaics/... routes, cached separately
+    %w(mosaics layers).each do |prefix|
+      Rails.cache.delete_matched "*/#{prefix}/tile/#{self.id}/*"
+      Rails.cache.delete_matched "*/#{prefix}/wms/#{self.id}[.?]*"
+    end
   end
 
   def update_counts
