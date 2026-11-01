@@ -1,13 +1,12 @@
 # Running Mapwarper with Docker Compose
 
-The stack has four services:
+The stack has three services and plugs into an existing Traefik reverse proxy:
 
 | Service | What it does |
 |---------|--------------|
 | `app`   | Rails app (Puma) with GDAL, ImageMagick and Mapserver mapscript |
 | `db`    | PostgreSQL 11 + PostGIS |
 | `redis` | WMS/tile cache |
-| `caddy` | Reverse proxy on ports 80/443 with automatic Let's Encrypt HTTPS |
 
 ## Image builds
 
@@ -36,16 +35,16 @@ The VPS does not need the source code, only these files:
 ```
 docker-compose.yml
 .env                      (from .env.example)
-docker/Caddyfile
 docker/application.yml    (from docker/application.yml.example)
 ```
 
-1. Install Docker Engine with the compose plugin on the VPS
-   (https://docs.docker.com/engine/install/).
-2. Point your domain's DNS A/AAAA record at the VPS and open ports 80 and 443.
+1. Have Docker Engine with the compose plugin and a running Traefik v2/v3 on
+   the VPS. Traefik needs the Docker provider enabled.
+2. Point your domain's DNS A/AAAA record at the VPS.
 3. Copy the files above to a folder on the VPS (or clone the repo there).
 4. Edit `.env`: set `DOMAIN`, `DB_PASSWORD`, and `SECRET_KEY_BASE`
    (`openssl rand -hex 64`). Add SMTP settings if you want signup emails.
+   Set the three `TRAEFIK_*` values to match your Traefik setup (see below).
 5. Edit `docker/application.yml`: set `host` to your domain, the email addresses,
    and the OAuth / hCaptcha / MapTiler keys you use.
 6. Pull and start:
@@ -57,6 +56,21 @@ docker/application.yml    (from docker/application.yml.example)
 
    The first start loads the schema into the empty database. Follow progress
    with `docker compose logs -f app`.
+
+## Traefik settings
+
+The `app` container gets Traefik labels and joins Traefik's network. Three
+values in `.env` must match your Traefik configuration:
+
+| Variable | What it is | How to find it |
+|----------|------------|----------------|
+| `TRAEFIK_NETWORK` | Docker network Traefik is attached to | `docker network ls`, or the `networks:` of your Traefik compose file |
+| `TRAEFIK_ENTRYPOINT` | Traefik's HTTPS entrypoint | `--entrypoints.<name>.address=:443` in Traefik's config |
+| `TRAEFIK_CERTRESOLVER` | Traefik's certificate resolver | `--certificatesresolvers.<name>.acme...` in Traefik's config |
+
+If Traefik already redirects HTTP to HTTPS globally, nothing else is needed.
+The router is named `mapwarper`; rename it in the labels if that clashes with
+another service.
 
 ## Creating an admin user
 
@@ -98,4 +112,4 @@ docker compose exec db pg_dump -U mapwarper mapwarper_production | gzip > mapwar
 - Warping large images is memory hungry; give the VPS at least 4 GB of RAM.
 - The image is based on Ubuntu 18.04 because the app needs Ruby 2.x with the
   distro's `ruby-mapscript` bindings. That base no longer receives free security
-  updates, so keep the app behind Caddy and don't expose port 3000 directly.
+  updates, so keep the app behind Traefik and don't expose port 3000 directly.
