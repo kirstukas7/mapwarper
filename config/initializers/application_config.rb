@@ -25,5 +25,17 @@ GDAL_PATH = APP_CONFIG['gdal_path'] || ""
 
 Rails.application.routes.default_url_options[:host] = APP_CONFIG['host']
 ActionMailer::Base.default_url_options[:host] = APP_CONFIG['host']
-ActionMailer::Base.delivery_method = :sendmail
+if ENV['SMTP_ADDRESS'].present?
+  ActionMailer::Base.delivery_method = :smtp
+  ActionMailer::Base.smtp_settings = {
+    address: ENV['SMTP_ADDRESS'],
+    port: ENV.fetch('SMTP_PORT', 587).to_i,
+    user_name: ENV['SMTP_USERNAME'],
+    password: ENV['SMTP_PASSWORD'],
+    authentication: (ENV['SMTP_USERNAME'].present? ? :login : nil),
+    enable_starttls_auto: true
+  }
+else
+  ActionMailer::Base.delivery_method = :sendmail
+end
 Devise.mailer_sender = APP_CONFIG['email']

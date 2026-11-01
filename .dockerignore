@@ -1,0 +1,17 @@
+.git
+.vagrant
+.env
+log/*
+tmp
+public/assets
+public/uploads
+public/system
+public/mapimages
+db/maptileindex
+db/imports
+vendor/bundle
+config/database.yml
+config/application.yml
+config/secrets.yml
+docker/application.yml
+test/test_files
