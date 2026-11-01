@@ -4,6 +4,13 @@ var maxOpacity = 1;
 var minOpacity = 0.1;
 
 
+// Reloads the preview after a rectify or crop in another tab. The tile layer
+// builds its own URLs, so it needs a new ?v= to skip tiles of the old warp.
+function reload_warped_preview() {
+  warped_wmslayer.urlSuffix = '?v=' + new Date().getTime();
+  warped_wmslayer.redraw(true);
+}
+
 function warpedinit() {
     OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
     OpenLayers.Util.onImageLoadErrorColor = "transparent";
@@ -32,34 +39,15 @@ function warpedinit() {
         warpedmap.addLayer(get_map_layer(layers_array[i]));
     }
 
-    var warped_wms_url = warpedwms_url;
-    
-    if (use_tiles === true){
-      warped_wmslayer =  new OpenLayers.Layer.TMS(I18n['warped']['warped_map'], warpedtiles_url, {
-        type: 'png',
-        getURL: osm_getTileURL,
-        urlSuffix: warpedtiles_suffix,
-        displayOutsideMaxExtent: true,
-        transitionEffect: 'resize'
-      });
-    }else{
-      warped_wmslayer = new OpenLayers.Layer.WMS(I18n['warped']['warped_map'],
-        warped_wms_url, {
-            format: 'image/png',
-            status: 'warped'
-        }, {
-            TRANSPARENT: 'true',
-            reproject: 'true',
-            transitionEffect: null
-        }, {
-            gutter: 15,
-            buffer: 0
-        }, {
-            projection: "epsg:4326",
-            units: "m"
-        }
-      );
-    }
+    // XYZ tiles rather than WMS: they sit on one shared grid, so browsers and
+    // Cloudflare can serve them to every user.
+    warped_wmslayer =  new OpenLayers.Layer.TMS(I18n['warped']['warped_map'], warpedtiles_url, {
+      type: 'png',
+      getURL: osm_getTileURL,
+      urlSuffix: warpedtiles_suffix,
+      displayOutsideMaxExtent: true,
+      transitionEffect: 'resize'
+    });
     var opacity = .7;
     warped_wmslayer.setOpacity(opacity);
     warped_wmslayer.setIsBaseLayer(false);

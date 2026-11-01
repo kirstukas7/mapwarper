@@ -28,14 +28,15 @@ function init(){
 
   layerMap.addLayers([mapnik_lay1]);
 
-  wmslayer =  new OpenLayers.Layer.WMS
-  ( "Layer"+layer_id,
-    warpedwms_url,
-    {format: 'image/png', layers: "image" },
-    {         TRANSPARENT:'true', reproject: 'true'},
-    { gutter: 15, buffer:0},
-    { projection:"epsg:4326", units: "m"  }
-  );
+  // XYZ tiles rather than WMS: they sit on one shared grid, so browsers and
+  // Cloudflare can serve them to every user.
+  wmslayer = new OpenLayers.Layer.TMS("Layer"+layer_id, layertiles_url, {
+    type: 'png',
+    getURL: osm_getTileURL,
+    urlSuffix: layertiles_suffix,
+    displayOutsideMaxExtent: true,
+    transitionEffect: 'resize'
+  });
   wmslayer.setIsBaseLayer(false);
   wmslayer.visibility = true;
   layerMap.addLayer(wmslayer);
