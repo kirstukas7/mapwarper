@@ -16,7 +16,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       ruby ruby-dev build-essential pkg-config git ca-certificates curl tzdata \
       libpq-dev postgresql-client libxml2-dev libxslt1-dev zlib1g-dev shared-mime-info \
-      imagemagick gdal-bin ruby-mapscript nodejs \
+      imagemagick gdal-bin proj-bin ruby-mapscript nodejs file \
  && rm -rf /var/lib/apt/lists/* \
  && gem install bundler -v 1.17.3 --no-document
 
