@@ -94,6 +94,12 @@ minutes). After that they ask again with `If-Modified-Since`. If the image hasn'
 copy is kept. Only a re-warp makes the app render new tiles. Errors, and WMS
 `GetCapabilities`, are sent as `no-cache` and are never cached.
 
+Tiles cache far better than WMS. Every client asks for the same XYZ tile URLs
+(`/maps/tile/<id>/{z}/{x}/{y}.png`), while WMS requests carry a `BBOX` that
+depends on the client's grid or current view, so they rarely repeat. The map
+preview and mosaic pages therefore use tiles. Point outside users (QGIS, JOSM,
+iD) to the tile URL on the Export tab rather than WMS where they can.
+
 Cloudflare only caches URLs with a file extension by default, and WMS URLs have
 none, so add a Cache Rule (Caching → Cache Rules → Create rule) with this
 expression:
