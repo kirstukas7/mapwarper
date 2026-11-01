@@ -161,10 +161,7 @@ function updateOtherMaps() {
     warped_layer.redraw(true);
   }
   if (typeof warpedmap != 'undefined' && typeof warped_wmslayer != 'undefined') {
-    warped_wmslayer.mergeNewParams({
-      'random': Math.random()
-    });
-    warped_wmslayer.redraw(true);
+    reload_warped_preview();
   }
 }
 

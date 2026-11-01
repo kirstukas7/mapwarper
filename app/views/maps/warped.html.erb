@@ -23,13 +23,11 @@
       var title = '<%=u @map.title -%>';
       var warped_image_width = <%= @map.width %>;
       var warped_image_height = <%= @map.height %>;
-      var warpedwms_url = '<%= url_for :controller => 'maps', :action => 'wms', :id => @map, :v => map_image_version(@map) -%>';
       var warped_bounds = new OpenLayers.Bounds(<%=@map.bounds-%>);
       var layer_baseurl = '<%= url_for(wms_layer_base_path) %>';
       var layers_array = [<%=@other_layers.join(",")-%>];
-      var warpedtiles_url = '<%= tile_map_base_url %>/';
+      var warpedtiles_url = '<%= tile_map_base_path(:id => @map.id) %>/';
       var warpedtiles_suffix = '?v=<%= map_image_version(@map) %>';
-      var use_tiles = <%= !user_signed_in? %>;
       var mask_geojson = <%= @map.mask_status != :masked || @map.mask_geojson.blank? ? false : @map.mask_geojson.html_safe %>;
     </script>
 

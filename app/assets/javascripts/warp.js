@@ -861,8 +861,7 @@ function show_warped_map() {
 
   //cross tab issue - reloads the rectified map in the preview tab if its there
   if (typeof warpedmap != 'undefined' && typeof warped_wmslayer != 'undefined') {
-    warped_wmslayer.mergeNewParams({'random': Math.random()});
-    warped_wmslayer.redraw(true);
+    reload_warped_preview();
   }
 }
 
