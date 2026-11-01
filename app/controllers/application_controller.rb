@@ -46,6 +46,23 @@ class ApplicationController < ActionController::Base
   rescue I18n::InvalidLocale
     I18n.locale = I18n.default_locale
   end
+
+  # Lets browsers and CDNs such as Cloudflare cache map imagery (tiles, WMS GetMap).
+  # Must run before caches_action, which replays cached bodies without the headers
+  # set inside the action. No session cookie is sent, so the response is cacheable.
+  def set_public_tile_cache_headers
+    wms_request = (params[:request] || params[:REQUEST]).to_s
+    return if wms_request.casecmp("GetCapabilities").zero?
+
+    request.session_options[:skip] = true
+    expires_in ENV.fetch('TILE_CACHE_MAX_AGE', 1.day).to_i, :public => true
+  end
+
+  # Don't let CDNs keep errors (e.g. a tile requested before the map is warped,
+  # or a Mapserver XML exception) around after the map changes.
+  def expires_now_unless_image
+    expires_now unless response.status == 200 && response.content_type.to_s.start_with?("image/")
+  end
   
   def check_role(role)
     unless user_signed_in? && @current_user.has_role?(role)

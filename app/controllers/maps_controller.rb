@@ -18,6 +18,8 @@ class MapsController < ApplicationController
   before_filter :set_wms_format, :only => :wms
 
   skip_before_action :require_hcaptcha, :only => [:wms, :tile]
+  before_filter :set_public_tile_cache_headers, :only => [:wms, :tile]
+  after_filter :expires_now_unless_image, :only => [:wms, :tile]
 
   rescue_from ActiveRecord::RecordNotFound, :with => :bad_record
 

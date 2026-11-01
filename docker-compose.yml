@@ -26,7 +26,7 @@ services:
     # Built and published by .github/workflows/docker-image.yml.
     # To build on the server instead, run: docker build -t mapwarper:local .
     # and set MAPWARPER_IMAGE=mapwarper:local in .env.
-    image: ${MAPWARPER_IMAGE:-ghcr.io/kirstukas7/mapwarper:latest}
+    image: ${MAPWARPER_IMAGE:?set MAPWARPER_IMAGE in .env}
     restart: unless-stopped
     depends_on:
       db:
@@ -41,6 +41,7 @@ services:
       REDIS_CACHE_URL: redis://redis:6379/0/cache
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      TILE_CACHE_MAX_AGE: ${TILE_CACHE_MAX_AGE:-86400}
       SMTP_ADDRESS: ${SMTP_ADDRESS:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
