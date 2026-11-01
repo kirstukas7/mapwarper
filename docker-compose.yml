@@ -52,22 +52,23 @@ services:
       - imports:/app/db/imports
     expose:
       - "3000"
+    networks:
+      - default
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.mapwarper.rule=Host(`${DOMAIN:?set DOMAIN in .env}`)
+      - traefik.http.routers.mapwarper.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.mapwarper.tls=true
+      - traefik.http.routers.mapwarper.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.mapwarper.loadbalancer.server.port=3000
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on:
-      - app
-    environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+networks:
+  # The existing network your Traefik container is attached to.
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}
 
 volumes:
   db_data:
@@ -76,5 +77,3 @@ volumes:
   mapimages:
   maptileindex:
   imports:
-  caddy_data:
-  caddy_config:
