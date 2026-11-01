@@ -38,6 +38,12 @@ class Layer < ActiveRecord::Base
     end
   end
   
+  # When the mosaic image last changed: a member map was re-warped, or maps were
+  # added or removed (which also updates the counts on this record).
+  def image_updated_at
+    [updated_at, layers_maps.maximum(:updated_at), maps.maximum(:rectified_at)].compact.max
+  end
+
   def update_layer
     create_tileindex
     set_bounds

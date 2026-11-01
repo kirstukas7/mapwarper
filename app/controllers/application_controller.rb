@@ -48,6 +48,8 @@ class ApplicationController < ActionController::Base
   end
 
   # Lets browsers and CDNs such as Cloudflare cache map imagery (tiles, WMS GetMap).
+  # They keep it briefly and then revalidate (see tile_conditional_get), so a
+  # re-warped map shows up within about max-age without purging.
   # Must run before caches_action, which replays cached bodies without the headers
   # set inside the action. No session cookie is sent, so the response is cacheable.
   def set_public_tile_cache_headers
@@ -55,12 +57,25 @@ class ApplicationController < ActionController::Base
     return if wms_request.casecmp("GetCapabilities").zero?
 
     request.session_options[:skip] = true
-    expires_in ENV.fetch('TILE_CACHE_MAX_AGE', 1.day).to_i, :public => true
+    expires_in ENV.fetch('TILE_CACHE_MAX_AGE', 5.minutes).to_i, :public => true
+  end
+
+  # Sends Last-Modified for a tile/WMS image and answers If-Modified-Since with
+  # 304 Not Modified when the image hasn't changed since, so a CDN revalidating
+  # an expired copy costs one query instead of a Mapserver render.
+  # Must run before caches_action, like set_public_tile_cache_headers.
+  def tile_conditional_get(image_updated_at)
+    return if image_updated_at.nil?
+    wms_request = (params[:request] || params[:REQUEST]).to_s
+    return if wms_request.casecmp("GetCapabilities").zero?
+
+    fresh_when :last_modified => Time.at(image_updated_at.to_i).utc, :public => true
   end
 
   # Don't let CDNs keep errors (e.g. a tile requested before the map is warped,
   # or a Mapserver XML exception) around after the map changes.
   def expires_now_unless_image
+    return if response.status == 304
     expires_now unless response.status == 200 && response.content_type.to_s.start_with?("image/")
   end
   

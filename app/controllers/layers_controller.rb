@@ -7,6 +7,7 @@ class LayersController < ApplicationController
   before_filter :check_if_layer_is_editable, :only => [:edit, :update, :remove_map, :update_year, :update, :destroy]
   skip_before_action :require_hcaptcha, :only => [:wms, :wms2, :tile]
   before_filter :set_public_tile_cache_headers, :only => [:wms, :wms2, :tile]
+  before_filter :layer_tile_conditional_get, :only => [:wms, :wms2, :tile]
   after_filter :expires_now_unless_image, :only => [:wms, :wms2, :tile]
 
 
@@ -695,6 +696,11 @@ class LayersController < ApplicationController
   end
 
   private
+
+  def layer_tile_conditional_get
+    layer = Layer.find_by_id(params[:id])
+    tile_conditional_get(layer.image_updated_at) if layer
+  end
 
   def check_if_layer_is_editable
     if user_signed_in? and (current_user.own_this_layer?(params[:id])  or current_user.has_role?("editor"))

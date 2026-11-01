@@ -970,6 +970,12 @@ class Map < ActiveRecord::Base
     return placemaker_result
   end
   
+  # When the image served for a WMS status last changed. Drives the tile/WMS
+  # Last-Modified header and the ?v= stamps on the site's own image URLs.
+  def image_updated_at(status = "warped")
+    status == "unwarped" ? created_at : rectified_at
+  end
+
   def clear_cache
     # Redis glob patterns: [.?] matches "/maps/wms/12.png?..." and "/maps/wms/12?..."
     # but not "/maps/wms/123..."
