@@ -38,6 +38,7 @@ function warpedinit() {
       warped_wmslayer =  new OpenLayers.Layer.TMS(I18n['warped']['warped_map'], warpedtiles_url, {
         type: 'png',
         getURL: osm_getTileURL,
+        urlSuffix: warpedtiles_suffix,
         displayOutsideMaxExtent: true,
         transitionEffect: 'resize'
       });
