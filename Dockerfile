@@ -20,6 +20,18 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && gem install bundler -v 1.17.3 --no-document
 
+# Ubuntu's ImageMagick policy caps images at 16K px per side / 128 MP, which
+# large map scans exceed; Paperclip then rejects the upload. Raise the limits.
+RUN sed -i -E \
+      -e 's/(name="memory" value=)"[^"]*"/\1"2GiB"/' \
+      -e 's/(name="map" value=)"[^"]*"/\1"4GiB"/' \
+      -e 's/(name="width" value=)"[^"]*"/\1"128KP"/' \
+      -e 's/(name="height" value=)"[^"]*"/\1"128KP"/' \
+      -e 's/(name="area" value=)"[^"]*"/\1"4GB"/' \
+      -e 's/(name="disk" value=)"[^"]*"/\1"16GiB"/' \
+      /etc/ImageMagick-6/policy.xml \
+ && grep -q 'name="width" value="128KP"' /etc/ImageMagick-6/policy.xml
+
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
